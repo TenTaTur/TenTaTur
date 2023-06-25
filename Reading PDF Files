@@ -1,0 +1,44 @@
+import openai
+import time
+from tenacity import retry, stop_after_attempt, wait_exponential
+import PyPDF2
+
+openai.api_key = "your API key"
+
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=30))
+def call_api(prompt, model="gpt-3.5-turbo-16k-0613", max_tokens=100, temperature=0.7):
+    response = openai.Completion.create(
+        engine=model,
+        prompt=prompt,
+        max_tokens=max_tokens,
+        temperature=temperature,
+        top_p=1,
+        frequency_penalty=0,
+        presence_penalty=0
+    )
+    return response.choices[0].text.strip()
+
+import PyPDF2
+
+def read_prompt_from_pdf_file(file_path):
+    with open(file_path, 'rb') as pdf_file:
+        pdf_reader = PyPDF2.PdfReader(pdf_file)
+        num_pages = len(pdf_reader.pages)
+        text = ''
+        for page in pdf_reader.pages:
+            text += page.extract_text()
+    return text
+
+
+if __name__ == "__main__":
+    file_path = "ruta archivo .pdf"
+    prompt = read_prompt_from_pdf_file(file_path)
+    print(f"Prompt:\n{prompt}")
+
+    try:
+        response = call_api(prompt)
+        print(f"Response:\n{response}")
+        time.sleep(30)  # Agregar una pausa de 1 minuto entre las llamadas a la API
+    except Exception as e:
+        print(f"Error al procesar el prompt: {e}")
+Nota: Working si tienes API Key creada, colocaste sistema de pago en Open AI. (EJ: CREDICARD), SET modelo: GPT 3.5 TURBO, y daas la rura del pdf a leer.
